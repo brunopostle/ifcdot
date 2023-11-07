@@ -189,14 +189,12 @@ def write_dot(ifc_file, path_dot, interest=set()):
 def cluster(dot, ifc_object, ifc_objects, interest=set()):
     if ifc_object.is_a("IfcVirtualElement"):
         return
-    if interest and not ifc_object.id() in interest:
-        return
-
     children = ifcopenshell.util.element.get_decomposition(ifc_object)
     if children:
-        dot.write("subgraph id_" + str(ifc_object.id()) + " {\n")
-        dot.write("cluster=true;\n")
-        dot.write('"' + ifc_objects[ifc_object.id()] + '";\n')
+        if interest and ifc_object.id() in interest:
+            dot.write("subgraph id_" + str(ifc_object.id()) + " {\n")
+            dot.write("cluster=true;\n")
+            dot.write('"' + ifc_objects[ifc_object.id()] + '";\n')
 
         for child in children:
             if child.is_a("IfcVirtualElement"):
@@ -205,7 +203,8 @@ def cluster(dot, ifc_object, ifc_objects, interest=set()):
                 continue
             dot.write('"' + ifc_objects[child.id()] + '";\n')
             cluster(dot, child, ifc_objects, interest=interest)
-        dot.write("}\n")
+        if interest and ifc_object.id() in interest:
+            dot.write("}\n")
 
 
 if __name__ == "__main__":
