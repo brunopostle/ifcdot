@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import ifcopenshell
+import ifcopenshell.util.element
 import sys
 
 # Copyright (C) 2023
@@ -55,7 +56,7 @@ def write_dot(ifc_file, path_dot, interest=set()):
 
     dot = open(path_dot, "w")
     dot.write("strict graph G {\n")
-    dot.write("graph [overlap=false,splines=true];\n")
+    dot.write("graph [overlap=false,splines=true,rankdir=LR];\n")
 
     for ifc_object in ifc_file.by_type("IfcObject"):
         if ifc_object.is_a("IfcVirtualElement"):
@@ -177,9 +178,34 @@ def write_dot(ifc_file, path_dot, interest=set()):
                     + "];\n"
                 )
 
+    for ifc_object in ifc_file.by_type("IfcSite"):
+        cluster(dot, ifc_object, ifc_objects, interest)
+
     dot.write("}\n")
     dot.close()
     return new_interest
+
+
+def cluster(dot, ifc_object, ifc_objects, interest=set()):
+    if ifc_object.is_a("IfcVirtualElement"):
+        return
+    if interest and not ifc_object.id() in interest:
+        return
+
+    children = ifcopenshell.util.element.get_decomposition(ifc_object)
+    if children:
+        dot.write("subgraph id_" + str(ifc_object.id()) + " {\n")
+        dot.write("cluster=true;\n")
+        dot.write('"' + ifc_objects[ifc_object.id()] + '";\n')
+
+        for child in children:
+            if child.is_a("IfcVirtualElement"):
+                continue
+            if interest and not child.id() in interest:
+                continue
+            dot.write('"' + ifc_objects[child.id()] + '";\n')
+            cluster(dot, child, ifc_objects, interest=interest)
+        dot.write("}\n")
 
 
 if __name__ == "__main__":
