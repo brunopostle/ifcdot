@@ -105,37 +105,39 @@ def write_dot(ifc_file, path_dot, interest=set()):
             relating_object = ifc_rel.RelatingObject
             related_objects = ifc_rel.RelatedObjects
             weight = "9"
-        if ifc_rel.is_a("IfcRelNests"):
+        elif ifc_rel.is_a("IfcRelNests"):
             relating_object = ifc_rel.RelatingObject
             related_objects = ifc_rel.RelatedObjects
             weight = "9"
-        if ifc_rel.is_a("IfcRelAssignsToGroup"):
+        elif ifc_rel.is_a("IfcRelAssignsToGroup"):
             relating_object = ifc_rel.RelatingGroup
             related_objects = ifc_rel.RelatedObjects
-        if ifc_rel.is_a("IfcRelConnectsElements"):
+        elif ifc_rel.is_a("IfcRelConnectsElements"):
             relating_object = ifc_rel.RelatingElement
             related_objects = [ifc_rel.RelatedElement]
             weight = "9"
             style = "dashed"
-        if ifc_rel.is_a("IfcRelConnectsStructuralMember"):
+        elif ifc_rel.is_a("IfcRelConnectsStructuralMember"):
             relating_object = ifc_rel.RelatingStructuralMember
             related_objects = [ifc_rel.RelatedStructuralConnection]
-        if ifc_rel.is_a("IfcRelContainedInSpatialStructure"):
+        elif ifc_rel.is_a("IfcRelContainedInSpatialStructure"):
             relating_object = ifc_rel.RelatingStructure
             related_objects = ifc_rel.RelatedElements
-        if ifc_rel.is_a("IfcRelFillsElement"):
+        elif ifc_rel.is_a("IfcRelFillsElement"):
             relating_object = ifc_rel.RelatingOpeningElement
             related_objects = [ifc_rel.RelatedBuildingElement]
             weight = "9"
-        if ifc_rel.is_a("IfcRelVoidsElement"):
+        elif ifc_rel.is_a("IfcRelVoidsElement"):
             relating_object = ifc_rel.RelatingBuildingElement
             related_objects = [ifc_rel.RelatedOpeningElement]
             weight = "9"
-        if ifc_rel.is_a("IfcRelSpaceBoundary"):
+        elif ifc_rel.is_a("IfcRelSpaceBoundary"):
             relating_object = ifc_rel.RelatingSpace
             related_objects = [ifc_rel.RelatedBuildingElement]
             weight = "9"
             style = "dotted"
+        else:
+            continue
 
         for related_object in related_objects:
             if (
@@ -189,12 +191,13 @@ def write_dot(ifc_file, path_dot, interest=set()):
 def cluster(dot, ifc_object, ifc_objects, interest=set()):
     if ifc_object.is_a("IfcVirtualElement"):
         return
+    if interest and not ifc_object.id() in interest:
+        return
     children = ifcopenshell.util.element.get_decomposition(ifc_object)
     if children:
-        if interest and ifc_object.id() in interest:
-            dot.write("subgraph id_" + str(ifc_object.id()) + " {\n")
-            dot.write("cluster=true;\n")
-            dot.write('"' + ifc_objects[ifc_object.id()] + '";\n')
+        dot.write("subgraph id_" + str(ifc_object.id()) + " {\n")
+        dot.write("cluster=true;\n")
+        dot.write('"' + ifc_objects[ifc_object.id()] + '";\n')
 
         for child in children:
             if child.is_a("IfcVirtualElement"):
@@ -203,8 +206,7 @@ def cluster(dot, ifc_object, ifc_objects, interest=set()):
                 continue
             dot.write('"' + ifc_objects[child.id()] + '";\n')
             cluster(dot, child, ifc_objects, interest=interest)
-        if interest and ifc_object.id() in interest:
-            dot.write("}\n")
+        dot.write("}\n")
 
 
 if __name__ == "__main__":
